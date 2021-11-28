@@ -2,6 +2,7 @@ from application_services.base_application_resource import BaseApplicationResour
 import middleware.context as context
 from flask import g
 import asyncio
+import random
 import requests
 
 
@@ -18,7 +19,7 @@ class RequestService:
     @classmethod
     def user_info_url(cls):
         base_url = context.get_atomic_microservice_url(service=cls.user_service)
-        endpoint = f"/users?googleID={g.google_user_id}"
+        endpoint = f"/api/users?googleID={g.google_user_id}"
         return base_url + endpoint
 
     @classmethod
@@ -48,11 +49,12 @@ class ArtRecommendationResource(BaseApplicationResource):
         catalog = cls._get_synchronous_catalog(headers)
 
         recommendations = []
-        for item in catalog:
-            if item["item_id"] not in purchase_history:
-                recommendations.append(item)  # this is the recommendation
-                if len(recommendations) == limit:
-                    return recommendations
+        while len(recommendations) < limit and len(catalog):
+            random_idx = random.randint(0, len(catalog) - 1)
+            random_selection = catalog[random_idx]
+            if random_selection["item_id"] not in purchase_history:
+                recommendations.append(random_selection)
+            catalog.pop(random_idx)
         return recommendations
 
     @classmethod
