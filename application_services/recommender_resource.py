@@ -10,36 +10,103 @@ class ArtRecommendationException(BaseApplicationException):
         self.msg = msg
 
 
-class ArtRecommendationResource(BaseApplicationResource):
-
-    products_service = "products"
+class RequestService:
     orders_service = "orders"
-
-    def __init__(self):
-        super().__init__()
-        self.service_urls = context.get_atomic_microservice_urls()
-
-    def get_synchronous_recommendation(self, limit):
-        # get the top popular orders
-        # get items already purchased by user
-        # recommend any items not already purchased within limit
-
-        url = self.service_urls[self.orders_service]
-        headers = {"Authorization": g.access_token}  # use users access token
-        r = requests.get(url=url, headers=headers)
-
-    def get_synchronous_purchase_history(self, user_id):
-        base_url = self.service_urls[self.orders_service]
-        endpoint = ""
-        headers = {"Authorization": g.access_token}  # use users access token
-        return requests.get(url=base_url + endpoint, headers=headers)
+    products_service = "products"
+    user_service = "users"
 
     @classmethod
-    def get_recommendation(cls, limit):
+    def user_info_url(cls):
+        base_url = context.get_atomic_microservice_url(service=cls.user_service)
+        endpoint = f"/users?googleID={g.google_user_id}"
+        return base_url + endpoint
 
-        # get the top popular orders
-        # get items already purchased by user
-        # recommend any items not already purchased within limit
+    @classmethod
+    def user_orders_url(cls, user_id):
+        base_url = context.get_atomic_microservice_url(service=cls.orders_service)
+        endpoint = f"/api/orders/?user={user_id}"
+        return base_url + endpoint
 
-        headers = {"Authorization": g.access_token}  # use users access token
+    @classmethod
+    def full_catalog_url(cls):
+        base_url = context.get_atomic_microservice_url(service=cls.products_service)
+        endpoint = f"/api/catalog"
+        return base_url + endpoint
+
+    @classmethod
+    def get_request_headers(cls):
+        return {"Authorization": f"Bearer {g.access_token}"}
+
+
+class ArtRecommendationResource(BaseApplicationResource):
+
+    @classmethod
+    def get_synchronous_recommendation(cls, limit):
+        headers = RequestService.get_request_headers()
+        user_id = cls._get_user_id(headers)
+        purchase_history = cls._get_synchronous_purchase_history(user_id, headers) if user_id else []
+        catalog = cls._get_synchronous_catalog(headers)
+
+        recommendations = []
+        for item in catalog:
+            if item["item_id"] not in purchase_history:
+                recommendations.append(item)  # this is the recommendation
+                if len(recommendations) == limit:
+                    return recommendations
+        return recommendations
+
+    @classmethod
+    def _get_user_id(cls, headers):
+        """
+        Finds the application user identifier based on the google auth ID
+        :return: integer representing user ID in database, or None if could not be found
+        """
+        url = RequestService.user_info_url()
+        resp = requests.get(url, headers=headers)
+        resp_body = resp.json()
+        if resp.status_code == 200 and resp_body:
+            return resp_body[0]["ID"]
+        return None
+
+    @classmethod
+    def _get_synchronous_purchase_history(cls, user_id, headers):
+        """
+        Get a set of all item ids previously purchased by a user
+        :return: Set containing distinct item ids previously purchased
+        """
+        url = RequestService.user_orders_url(user_id)
+        resp = requests.get(url, headers=headers)
+
+        resp_body = resp.json()
+        if resp.status_code != 200 or not resp_body:
+            return set()
+        return cls._parse_user_item_id_history(resp_body)
+
+    @classmethod
+    def _parse_user_item_id_history(cls, response_body):
+        """
+        Parse out all item ids purchased by user from request body
+        :return: Set containing distinct item ids previously purchased
+        """
+        previously_purchased = set()
+        for order in response_body['result']:
+            for item in order['items']:
+                previously_purchased.add(item['item_id'])
+        return previously_purchased
+
+    @classmethod
+    def _get_synchronous_catalog(cls, headers):
+        """
+        Get the full catalog of items
+        :return: Contents of catalog, as dictionary
+        """
+        url = RequestService.full_catalog_url()
+        resp = requests.get(url, headers=headers)
+        if resp.status_code != 200:
+            return []
+        return resp.json()
+
+    @classmethod
+    def get_asynchronous_recommendation(cls, limit, user=None):
+        pass  # TO-DO
 

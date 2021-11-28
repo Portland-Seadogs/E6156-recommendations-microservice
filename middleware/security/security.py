@@ -5,7 +5,7 @@ the submitted Oauth token.
 from flask import g
 from middleware.security.google_auth import GoogleAuth
 
-LOGIN_NOT_REQUIRED_PATHS = []
+LOGIN_NOT_REQUIRED_PATHS = ["health_check"]
 
 
 class Security:
@@ -19,7 +19,7 @@ class Security:
         above for ease in testing.
         """
         if incoming_request.endpoint in LOGIN_NOT_REQUIRED_PATHS:
-            return None, None  # no issues, continue
+            return None
 
         if 'Authorization' not in incoming_request.headers:
             return {'message': 'Request denied access',
@@ -41,7 +41,7 @@ class Security:
 
         g.access_token = access_token
         g.google_user_id = validation['user_id']
-        return None, None  # hurray no issues!
+        return None  # hurray no issues!
 
     @classmethod
     def is_valid_token(cls, token):
