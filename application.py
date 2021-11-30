@@ -35,18 +35,20 @@ def get_recommendation_sync():
     limit = request.args.get("limit")
     limit = int(limit) if limit else 1
 
-    recommendations = ArtRecommendationResource.get_synchronous_recommendation(limit)
+    recommendations = ArtRecommendationResource.get_synchronous_recommendation(
+        limit)
     return Response(
         json.dumps(recommendations), status=HTTPStatus.OK, content_type="application/json"
     )
 
 
 @app.route("/api/recommendations", methods=["GET"])
-def get_recommendation_async():
+async def get_recommendation_async():
     limit = request.args.get("limit")
     limit = int(limit) if limit else 1
 
-    recommendation = ArtRecommendationResource.get_asynchronous_recommendation(limit)
+    recommendation = await ArtRecommendationResource.get_synchronous_recommendation(
+        limit)
     return Response(
         json.dumps(recommendation), status=HTTPStatus.OK, content_type="application/json"
     )

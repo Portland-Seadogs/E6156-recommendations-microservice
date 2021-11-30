@@ -18,19 +18,22 @@ class RequestService:
 
     @classmethod
     def user_info_url(cls):
-        base_url = context.get_atomic_microservice_url(service=cls.user_service)
+        base_url = context.get_atomic_microservice_url(
+            service=cls.user_service)
         endpoint = f"/api/users?googleID={g.google_user_id}"
         return base_url + endpoint
 
     @classmethod
     def user_orders_url(cls, user_id):
-        base_url = context.get_atomic_microservice_url(service=cls.orders_service)
+        base_url = context.get_atomic_microservice_url(
+            service=cls.orders_service)
         endpoint = f"/api/orders/?user={user_id}"
         return base_url + endpoint
 
     @classmethod
     def full_catalog_url(cls):
-        base_url = context.get_atomic_microservice_url(service=cls.products_service)
+        base_url = context.get_atomic_microservice_url(
+            service=cls.products_service)
         endpoint = f"/api/catalog"
         return base_url + endpoint
 
@@ -45,7 +48,8 @@ class ArtRecommendationResource(BaseApplicationResource):
     def get_synchronous_recommendation(cls, limit):
         headers = RequestService.get_request_headers()
         user_id = cls._get_user_id(headers)
-        purchase_history = cls._get_synchronous_purchase_history(user_id, headers) if user_id else []
+        purchase_history = cls._get_synchronous_purchase_history(
+            user_id, headers) if user_id else []
         catalog = cls._get_synchronous_catalog(headers)
 
         recommendations = []
@@ -111,4 +115,3 @@ class ArtRecommendationResource(BaseApplicationResource):
     @classmethod
     def get_asynchronous_recommendation(cls, limit, user=None):
         pass  # TO-DO
-
