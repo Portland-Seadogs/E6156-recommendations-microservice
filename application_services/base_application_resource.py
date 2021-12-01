@@ -9,5 +9,3 @@ class BaseApplicationException(Exception):
 class BaseApplicationResource(ABC):
     def __init__(self):
         pass
-
-
