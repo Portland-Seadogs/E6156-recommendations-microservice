@@ -91,7 +91,7 @@ class ArtRecommendationResource(BaseApplicationResource):
         :return: Set containing distinct item ids previously purchased
         """
         previously_purchased = set()
-        for order in response_body['result']:
+        for order in response_body['result']['orders']:
             for item in order['items']:
                 previously_purchased.add(item['item_id'])
         return previously_purchased
