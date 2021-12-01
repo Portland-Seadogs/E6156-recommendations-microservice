@@ -89,6 +89,20 @@ class ArtRecommendationResource(BaseApplicationResource):
         return cls._parse_user_item_id_history(resp_body)
 
     @classmethod
+    async def _get_asynchronous_purchase_history(cls, user_id, headers):
+        """
+        Get a set of all item ids previously purchased by a user
+        :return: Set containing distinct item ids previously purchased
+        """
+        url = RequestService.user_orders_url(user_id)
+        resp = await requests.get(url, headers=headers)
+
+        resp_body = resp.json()
+        if resp.status_code != 200 or not resp_body:
+            return set()
+        return cls._parse_user_item_id_history(resp_body)
+
+    @classmethod
     def _parse_user_item_id_history(cls, response_body):
         """
         Parse out all item ids purchased by user from request body
@@ -113,5 +127,30 @@ class ArtRecommendationResource(BaseApplicationResource):
         return resp.json()
 
     @classmethod
+    async def _get_asynchronous_catalog(cls, headers):
+        """
+        Get the full catalog of items
+        :return: Contents of catalog, as dictionary
+        """
+        url = RequestService.full_catalog_url()
+        resp = await requests.get(url, headers=headers)
+        if resp.status_code != 200:
+            return []
+        return resp.json()
+
+    @classmethod
     def get_asynchronous_recommendation(cls, limit, user=None):
-        pass  # TO-DO
+        headers = RequestService.get_request_headers()
+        user_id = cls._get_user_id(headers)
+        purchase_history = cls._get_asynchronous_purchase_history(
+            user_id, headers) if user_id else []
+        catalog = cls._get_asynchronous_catalog(headers)
+
+        recommendations = []
+        while len(recommendations) < limit and len(catalog):
+            random_idx = random.randint(0, len(catalog) - 1)
+            random_selection = catalog[random_idx]
+            if random_selection["item_id"] not in purchase_history:
+                recommendations.append(random_selection)
+            catalog.pop(random_idx)
+        return recommendations
