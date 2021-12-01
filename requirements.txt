@@ -4,6 +4,7 @@ botocore==1.22.7
 click==8.0.1
 Flask==2.0.1
 Flask-Cors==3.0.10
+grequests==0.6.0
 itsdangerous==2.0.1
 Jinja2==3.0.1
 jmespath==0.10.0
