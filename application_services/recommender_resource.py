@@ -1,9 +1,12 @@
+from gevent import monkey
+monkey.patch_all()
 from application_services.base_application_resource import BaseApplicationResource, BaseApplicationException
 import middleware.context as context
 from flask import g
 import asyncio
 import random
 import requests
+import grequests
 
 
 class ArtRecommendationException(BaseApplicationException):
@@ -95,7 +98,7 @@ class ArtRecommendationResource(BaseApplicationResource):
         :return: Set containing distinct item ids previously purchased
         """
         url = RequestService.user_orders_url(user_id)
-        resp = await requests.get(url, headers=headers)
+        resp = await grequests.get(url, headers=headers)
 
         resp_body = resp.json()
         if resp.status_code != 200 or not resp_body:
@@ -133,7 +136,7 @@ class ArtRecommendationResource(BaseApplicationResource):
         :return: Contents of catalog, as dictionary
         """
         url = RequestService.full_catalog_url()
-        resp = await requests.get(url, headers=headers)
+        resp = await grequests.get(url, headers=headers)
         if resp.status_code != 200:
             return []
         return resp.json()
@@ -141,16 +144,16 @@ class ArtRecommendationResource(BaseApplicationResource):
     @classmethod
     def get_asynchronous_recommendation(cls, limit, user=None):
         headers = RequestService.get_request_headers()
-        user_id = cls._get_user_id(headers)
-        purchase_history = cls._get_asynchronous_purchase_history(
-            user_id, headers) if user_id else []
-        catalog = cls._get_asynchronous_catalog(headers)
 
-        recommendations = []
-        while len(recommendations) < limit and len(catalog):
-            random_idx = random.randint(0, len(catalog) - 1)
-            random_selection = catalog[random_idx]
-            if random_selection["item_id"] not in purchase_history:
-                recommendations.append(random_selection)
-            catalog.pop(random_idx)
-        return recommendations
+        user_id = cls._get_user_id(headers)
+
+        tasks = [
+            cls._get_asynchronous_purchase_history(
+                user_id, headers),
+            cls._get_asynchronous_catalog(headers)
+        ]
+
+        loop = asyncio.get_event_loop()
+        results = asyncio.gather(*tasks)
+        loop.run_until_complete(results)
+        return results
