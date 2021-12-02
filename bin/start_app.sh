@@ -2,9 +2,9 @@
 
 # setup environment parameters
 export FLASK_APP='application.py'
-export ORDERS_URL="http://160.39.244.167:5000"
-export PRODUCTS_URL="http://160.39.244.167:7777"
-export USERS_ADDRESSES_URL="http://160.39.244.167:8888"
+export ORDERS_URL="localhost:5000/api"
+export PRODUCTS_URL="localhost:7777/api"
+export USERS_ADDRESSES_URL="localhost:8888/api"
 
 # ready to run actual app
 flask run --host=0.0.0.0 --port=9999

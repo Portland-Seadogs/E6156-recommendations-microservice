@@ -24,19 +24,19 @@ class RequestService:
     @classmethod
     def user_info_url(cls):
         base_url = context.get_atomic_microservice_url(service=cls.user_service)
-        endpoint = f"/api/users?googleID={g.google_user_id}"
+        endpoint = f"/users?googleID={g.google_user_id}"
         return base_url + endpoint
 
     @classmethod
     def user_orders_url(cls, user_id):
         base_url = context.get_atomic_microservice_url(service=cls.orders_service)
-        endpoint = f"/api/orders/?user={user_id}"
+        endpoint = f"/orders/?user={user_id}"
         return base_url + endpoint
 
     @classmethod
     def full_catalog_url(cls):
         base_url = context.get_atomic_microservice_url(service=cls.products_service)
-        endpoint = f"/api/catalog"
+        endpoint = f"/catalog"
         return base_url + endpoint
 
     @classmethod
